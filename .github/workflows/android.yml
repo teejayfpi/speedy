@@ -43,10 +43,31 @@ jobs:
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: "21"
+          # Gradle 8.2.1 (used by the generated project) does not support
+          # Java 21, and AGP 8.2.1 expects 17.
+          java-version: "17"
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Prepare Android SDK
+        # The runner image already ships a complete Android SDK. The
+        # android-actions/setup-android action is deliberately not used: it
+        # tries to install the legacy "tools" package, which no longer exists
+        # and makes the step fail.
+        run: |
+          SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/usr/local/lib/android/sdk}}"
+          echo "ANDROID_HOME=$SDK" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$SDK" >> "$GITHUB_ENV"
+          SDKMGR=$(find "$SDK" -name sdkmanager -path '*cmdline-tools*' \
+                   -print -quit)
+          if [ -z "$SDKMGR" ]; then
+            echo "::error::no sdkmanager under $SDK"
+            exit 1
+          fi
+          echo "Using $SDKMGR"
+          yes | "$SDKMGR" --licenses > /dev/null 2>&1 || true
+          # Match variables.gradle: compileSdk 34.
+          "$SDKMGR" "platforms;android-34" "build-tools;34.0.0" \
+            "platform-tools" > /dev/null
+          ls "$SDK/platforms"
 
       - name: Install Capacitor
         working-directory: client/android

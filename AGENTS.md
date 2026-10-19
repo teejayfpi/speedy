@@ -34,6 +34,26 @@ document (as-is)" format option.
   the network probe runs on the worker thread and never blocks a request.
 - `assets/icon-192.png` etc. are served by `speedy_web.py`; the page head
   references `/favicon.ico`, `/icon-192.png`, `/manifest.webmanifest`.
+- Concurrent downloads must not share a temp file. `fetch._claim_target`
+  takes an exclusive `flock` on `<dest>.part` and falls back to the next free
+  name. Do not reintroduce a fixed `.part` path: whichever download finishes
+  first renames it away and the others die with `FileNotFoundError`.
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+Hermetic: a local `http.server` on an ephemeral port, no internet, no mocks
+of the code under test. Covers naming (incl. traversal and UTF-8
+`Content-Disposition`), resume, concurrency, segmentation, and the web API.
+
+Two notes when editing tests:
+- Segmented tests use `/big.bin` (8 MiB) because aria2c is skipped for files
+  under `ARIA2_MIN_BYTES`; a smaller fixture makes them pass vacuously.
+  `test_segmented_matches_single` asserts `_aria2` was called for this reason.
+- `TestWebApi` needs `speedy_web.Handler.manager` set before the server starts.
 
 ## Conventions
 

@@ -74,6 +74,16 @@ option downloads the bytes as-is.
 `mode` is `auto`, `media`, or `direct`. `format` is `best`, a height like
 `720p`, or `audio`. `GET /api/jobs` returns live job state.
 
+## Tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+Hermetic — a local HTTP server on an ephemeral port, no internet, no mocks of
+the code under test. 41 tests covering naming, resume, concurrent downloads,
+segmented transfers, and the web API.
+
 ## Files
 
 | File | Purpose |

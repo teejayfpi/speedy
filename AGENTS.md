@@ -9,8 +9,47 @@ Fast downloader for media (yt-dlp sites) and plain files (PDF, ZIP, DOCX, ...).
 | `speedy.py` | CLI. URL routing, yt-dlp options, progress display. |
 | `fetch.py` | Native HTTP/aria2c downloader for direct files. Stdlib only. |
 | `speedy_web.py` | Local web UI on stdlib `http.server`. No framework. |
-| `make_assets.py` | Regenerates `assets/` (icons, logo, OG card, manifest). |
+| `make_assets.py` | Regenerates `assets/` (icons, logo, OG card, manifest) and `client/build/` icons. Single source of truth for the manifest. |
 | `assets/` | Generated — regenerate with `python make_assets.py`. |
+| `client/` | Electron desktop client. `www/index.html` is the connect screen. |
+| `client/android/` | Capacitor Android client. `setup_android.py` patches the generated project. |
+| `.github/workflows/` | `ci.yml`, `android.yml`, `desktop.yml`. |
+
+## Native clients
+
+Both clients are thin wrappers: they connect to a Speedy server over the LAN and
+the *server* does the downloading. Neither downloads anything itself.
+
+- `/api/health` is the only endpoint that sends `Access-Control-Allow-Origin`,
+  so an installed client on a different origin (`file://`, `localhost`) can
+  probe it. **Do not add CORS to `/api/download`** — that would let any web page
+  queue downloads on a server with no authentication. `do_OPTIONS` answers
+  preflight for `/api/health` only.
+- Capacitor generates `client/android/android/` at build time, so it is
+  gitignored. `setup_android.py` runs afterwards and (a) adds
+  `android:usesCleartextTraffic="true"` — a LAN server is plain `http://` and
+  Android blocks cleartext by default — and (b) installs the launcher icons.
+  It is idempotent.
+- The client navigates top-level to the server rather than using an iframe:
+  the server sends `frame-ancestors 'none'`, which blocks framing.
+- Brand contact details live in `speedy_web.py` as `AUTHOR`, `WHATSAPP`,
+  `PHONE_DISPLAY`. Do not invent an email address for the author; none was
+  given.
+
+## CI gotchas
+
+- Java **17**, not 21: the generated project uses Gradle 8.2.1 / AGP 8.2.1,
+  which cannot run on Java 21.
+- Do **not** use `android-actions/setup-android@v3`. It tries to install the
+  legacy `tools` package, which no longer exists, and the step fails. The
+  runner image already has a complete SDK — use it and install only
+  `platforms;android-34`.
+- `ci.yml` also runs the suite with `aria2c` removed, to prove the
+  single-connection fallback works. The suite skips (not fails) without it.
+- The asset job validates presence and PNG magic bytes. It deliberately does
+  **not** regenerate and diff: PNG bytes vary with font rendering, so that
+  check fails for reasons unrelated to correctness.
+
 
 ## Why there are two download paths
 

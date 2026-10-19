@@ -1,0 +1,22 @@
+{
+  "name": "speedy-android",
+  "productName": "Speedy",
+  "version": "1.2.0",
+  "description": "Speedy — fast media and file downloader (Android client)",
+  "author": {
+    "name": "Ayanlowo Olatunji Ayobami"
+  },
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "add:android": "cap add android",
+    "sync": "cap sync android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.2.0",
+    "@capacitor/core": "^6.2.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^6.2.0"
+  }
+}

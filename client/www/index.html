@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Speedy — Connect</title>
+<meta name="author" content="Ayanlowo Olatunji Ayobami">
+<meta name="theme-color" content="#0b0d12">
+<meta name="color-scheme" content="dark">
+<style>
+  :root {
+    --bg: #0b0d12; --card: #161a23; --line: #262c39; --ink: #eef1f6;
+    --ink-2: #a7b0c0; --ink-3: #6f798c; --accent: #4c8dff;
+    --ok: #34d399; --bad: #f87171; --radius: 14px;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; color: var(--ink);
+    background:
+      radial-gradient(800px 460px at 15% -10%, rgba(76,141,255,.16), transparent 62%),
+      radial-gradient(640px 400px at 90% 6%, rgba(139,92,246,.13), transparent 64%),
+      var(--bg);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex; align-items: center; justify-content: center;
+    padding: 26px 20px calc(26px + env(safe-area-inset-bottom));
+  }
+  .card {
+    width: 100%; max-width: 460px;
+    background: linear-gradient(180deg, var(--card), #12151c);
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 26px 24px;
+    box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 18px 50px -22px rgba(0,0,0,.8);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .logo {
+    width: 46px; height: 46px; border-radius: 13px; flex: none;
+    background: linear-gradient(140deg, var(--accent), #8b5cf6);
+    display: grid; place-items: center; font-size: 24px;
+    box-shadow: 0 8px 22px -10px rgba(76,141,255,.9);
+  }
+  .brand h1 { margin: 0; font-size: 19px; letter-spacing: -.02em; font-weight: 700; }
+  .brand p { margin: 0; font-size: 12px; color: var(--ink-3); }
+  h2 { font-size: 16.5px; margin: 0 0 6px; letter-spacing: -.01em; }
+  .lead { color: var(--ink-2); font-size: 13.5px; margin: 0 0 18px; }
+  label { display: block; font-size: 11.5px; text-transform: uppercase;
+          letter-spacing: .06em; color: var(--ink-3); margin-bottom: 7px;
+          font-weight: 600; }
+  input {
+    width: 100%; padding: 12px 13px; background: #0e1117; color: var(--ink);
+    border: 1px solid var(--line); border-radius: 10px; font-size: 15px;
+    font-family: inherit; min-height: 48px; margin-bottom: 14px;
+  }
+  input:focus { outline: none; border-color: var(--accent);
+                box-shadow: 0 0 0 3px rgba(76,141,255,.26); }
+  button {
+    width: 100%; min-height: 50px; border: 0; border-radius: 10px;
+    background: linear-gradient(92deg, var(--accent), #6366f1); color: #fff;
+    font-size: 15.5px; font-weight: 650; font-family: inherit; cursor: pointer;
+    box-shadow: 0 6px 18px -8px rgba(76,141,255,.9);
+  }
+  button:hover { filter: brightness(1.07); }
+  button:disabled { opacity: .55; cursor: default; }
+  .status { margin-top: 14px; font-size: 13px; min-height: 20px;
+            display: flex; align-items: center; gap: 8px; }
+  .status.ok { color: var(--ok); }
+  .status.bad { color: var(--bad); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor;
+         flex: none; }
+  details { margin-top: 20px; border-top: 1px solid #1f242f; padding-top: 15px; }
+  summary { cursor: pointer; font-size: 13px; color: var(--ink-2);
+            font-weight: 600; }
+  .help { font-size: 12.5px; color: var(--ink-3); margin-top: 11px; }
+  .help ol { margin: 8px 0 0; padding-left: 19px; }
+  .help li { margin-bottom: 7px; }
+  code { background: #0e1117; border: 1px solid var(--line); border-radius: 6px;
+         padding: 2px 6px; font-size: 12px; color: #c9d3e6;
+         font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+         word-break: break-all; }
+  .foot { margin-top: 20px; padding-top: 15px; border-top: 1px solid #1f242f;
+          font-size: 12px; color: var(--ink-3); }
+  .foot a { color: var(--accent); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="brand">
+    <div class="logo" aria-hidden="true">&#9889;</div>
+    <div>
+      <h1>Speedy</h1>
+      <p>Media &amp; file downloader</p>
+    </div>
+  </div>
+
+  <h2>Connect to your Speedy server</h2>
+  <p class="lead">Speedy downloads files to the computer running the server.
+     Enter that computer's address below.</p>
+
+  <form id="f">
+    <label for="url">Server address</label>
+    <input id="url" type="url" inputmode="url" autocomplete="off"
+           autocapitalize="off" spellcheck="false"
+           placeholder="http://192.168.1.5:8000">
+    <button type="submit" id="go">Connect</button>
+  </form>
+  <div class="status" id="status"></div>
+
+  <details>
+    <summary>How do I start the server?</summary>
+    <div class="help">
+      <ol>
+        <li>On your computer, open a terminal in the Speedy folder.</li>
+        <li>Run:<br><code>python speedy_web.py --host 0.0.0.0 --port 8000</code></li>
+        <li>Find the computer's local IP address:
+            <code>ipconfig</code> on Windows, <code>ifconfig</code> on macOS
+            or Linux.</li>
+        <li>Enter it above, e.g. <code>http://192.168.1.5:8000</code>.</li>
+      </ol>
+      <p style="margin:12px 0 0">Both devices must be on the same Wi-Fi network.
+         Binding to <code>0.0.0.0</code> exposes the server to that network and
+         it has no password, so only do this on a network you trust.</p>
+    </div>
+  </details>
+
+  <div class="foot">
+    Built &amp; designed by Ayanlowo Olatunji Ayobami &middot;
+    <a href="https://wa.me/2347038193753?text=Hello%20Ayanlowo%2C%20I%20am%20using%20Speedy.">WhatsApp</a>
+    &middot; <a href="tel:+2347038193753">+234 703 819 3753</a>
+  </div>
+</div>
+
+<script>
+"use strict";
+var KEY = "speedy.server";
+var $ = function (s) { return document.querySelector(s); };
+
+function setStatus(msg, kind) {
+  var el = $("#status");
+  el.className = "status" + (kind ? " " + kind : "");
+  el.innerHTML = msg ? '<span class="dot"></span><span></span>' : "";
+  if (msg) el.lastChild.textContent = msg;
+}
+
+function normalise(v) {
+  v = (v || "").trim().replace(/\/+$/, "");
+  if (v && !/^https?:\/\//i.test(v)) v = "http://" + v;
+  return v;
+}
+
+async function reachable(base) {
+  try {
+    var r = await fetch(base + "/api/health", { cache: "no-store" });
+    if (!r.ok) return null;
+    var h = await r.json();
+    return h && h.status === "ok" ? h : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+async function connect(base, remember) {
+  setStatus("Checking " + base + " ...");
+  var health = await reachable(base);
+  if (!health) {
+    setStatus("Could not reach a Speedy server there. Is it running, and are " +
+              "you on the same network?", "bad");
+    return false;
+  }
+  setStatus("Connected to Speedy " + (health.version || "") + " — opening...", "ok");
+  if (remember) { try { localStorage.setItem(KEY, base); } catch (e) {} }
+  // Navigate to the real app. The server sends frame-ancestors 'none', so
+  // embedding it in an iframe would be blocked; top-level navigation is right.
+  window.location.replace(base + "/");
+  return true;
+}
+
+$("#f").addEventListener("submit", function (e) {
+  e.preventDefault();
+  var base = normalise($("#url").value);
+  if (!base) { setStatus("Enter the server address first.", "bad"); return; }
+  $("#url").value = base;
+  $("#go").disabled = true;
+  connect(base, true).finally(function () { $("#go").disabled = false; });
+});
+
+// On launch, try the last known server so a returning user skips this screen.
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem(KEY); } catch (e) {}
+  if (!saved) return;
+  $("#url").value = saved;
+  setStatus("Reconnecting to " + saved + " ...");
+  reachable(saved).then(function (h) {
+    if (h) connect(saved, false);
+    else setStatus("Saved server is offline. Start it, then press Connect.", "bad");
+  });
+})();
+</script>
+</body>
+</html>

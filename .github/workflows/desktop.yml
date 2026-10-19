@@ -1,0 +1,105 @@
+name: Build Desktop Installers
+
+# Builds installers for Windows, macOS and Linux from the Electron client, and
+# attaches them to the workflow run.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "client/**"
+      - "assets/**"
+      - ".github/workflows/desktop.yml"
+  pull_request:
+    paths:
+      - "client/**"
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Also create a GitHub Release with the installers attached"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: desktop-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifacts: "client/dist/*.AppImage\nclient/dist/*.deb"
+          - os: windows-latest
+            artifacts: "client/dist/*.exe"
+          - os: macos-latest
+            artifacts: "client/dist/*.dmg"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install dependencies
+        working-directory: client
+        run: npm install --no-fund --no-audit
+
+      - name: Build installers
+        working-directory: client
+        # Unsigned on macOS: this is a personal build, not a notarised release.
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --publish never
+
+      - name: List what was produced
+        working-directory: client
+        shell: bash
+        run: ls -lh dist/ || true
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedy-desktop-${{ matrix.os }}
+          path: |
+            client/dist/*.AppImage
+            client/dist/*.deb
+            client/dist/*.exe
+            client/dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: build
+    if: github.event_name == 'workflow_dispatch' && inputs.release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+
+      - name: Show collected files
+        run: find dist -type f | sort
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: desktop-v1.2.0
+          name: Speedy Desktop v1.2.0
+          body: |
+            Speedy desktop client, built by Ayanlowo Olatunji Ayobami.
+
+            Install the package for your system, then enter the address of the
+            computer running your Speedy server.
+
+            Windows and macOS builds are unsigned, so your system will warn
+            you the first time you open them.
+          files: dist/**/*

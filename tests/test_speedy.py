@@ -385,7 +385,86 @@ class TestWebApi(ServerMixin, unittest.TestCase):
         status, body, ctype = self.get("/manifest.webmanifest")
         self.assertEqual(status, 200)
         self.assertIn("manifest", ctype)
-        self.assertEqual(json.loads(body)["name"], "Speedy")
+        m = json.loads(body)
+        self.assertEqual(m["short_name"], "Speedy")
+        self.assertEqual(m["display"], "standalone")  # required to be installable
+        self.assertIn("Ayanlowo Olatunji Ayobami", m["author"])
+        # Installability needs a 192 and a 512 icon.
+        sizes = {i["sizes"] for i in m["icons"]}
+        self.assertIn("192x192", sizes)
+        self.assertIn("512x512", sizes)
+
+    def test_service_worker_served_uncached(self):
+        status, body, ctype = self.get("/sw.js")
+        self.assertEqual(status, 200)
+        self.assertIn("javascript", ctype)
+        self.assertIn(b"addEventListener", body)
+
+    def test_health_reports_author_and_version(self):
+        status, body, _ = self.get("/api/health")
+        self.assertEqual(status, 200)
+        h = json.loads(body)
+        self.assertEqual(h["status"], "ok")
+        self.assertEqual(h["app"], "Speedy")
+        self.assertEqual(h["author"], "Ayanlowo Olatunji Ayobami")
+        self.assertEqual(h["whatsapp"], "2347038193753")
+        self.assertTrue(h["version"])
+
+    def test_og_image_served(self):
+        status, body, ctype = self.get("/social/og-image.png")
+        self.assertEqual(status, 200)
+        self.assertEqual(ctype, "image/png")
+        self.assertTrue(body.startswith(b"\x89PNG"))
+
+    def test_health_allows_cross_origin(self):
+        """Installed clients probe health from file:// or localhost."""
+        import urllib.request as u
+        with u.urlopen(f"http://127.0.0.1:{self.api_port}/api/health",
+                       timeout=10) as r:
+            self.assertEqual(r.headers.get("Access-Control-Allow-Origin"), "*")
+
+    def test_download_endpoint_is_not_cross_origin(self):
+        """CORS must stay off /api/download, or any page could queue downloads."""
+        import urllib.request as u
+        with u.urlopen(f"http://127.0.0.1:{self.api_port}/api/jobs",
+                       timeout=10) as r:
+            self.assertIsNone(r.headers.get("Access-Control-Allow-Origin"))
+
+    def test_options_preflight_for_health(self):
+        import urllib.request as u
+        req = u.Request(f"http://127.0.0.1:{self.api_port}/api/health",
+                        method="OPTIONS")
+        with u.urlopen(req, timeout=10) as r:
+            self.assertEqual(r.status, 204)
+            self.assertEqual(r.headers.get("Access-Control-Allow-Origin"), "*")
+
+    def test_security_headers_present(self):
+        import urllib.request as u
+        with u.urlopen(f"http://127.0.0.1:{self.api_port}/", timeout=10) as r:
+            self.assertEqual(r.headers.get("X-Content-Type-Options"), "nosniff")
+            self.assertEqual(r.headers.get("X-Frame-Options"), "DENY")
+            self.assertIn("default-src 'self'",
+                          r.headers.get("Content-Security-Policy", ""))
+
+    def test_head_request_supported(self):
+        """Link previewers and installability probes use HEAD."""
+        req = urllib.request.Request(f"http://127.0.0.1:{self.api_port}/",
+                                     method="HEAD")
+        with urllib.request.urlopen(req, timeout=10) as r:
+            self.assertEqual(r.status, 200)
+            self.assertEqual(r.read(), b"")
+
+    def test_page_has_whatsapp_and_phone_links(self):
+        _, body, _ = self.get("/")
+        page = body.decode()
+        self.assertIn("wa.me/2347038193753", page)
+        self.assertIn("tel:+2347038193753", page)
+        self.assertIn("Ayanlowo Olatunji Ayobami", page)
+
+    def test_page_escapes_error_markup(self):
+        """The renderer must escape server strings; check the helper exists."""
+        _, body, _ = self.get("/")
+        self.assertIn(b"function esc(", body)
 
     def test_unknown_path_404(self):
         status, _, _ = self.get("/nope")

@@ -1,0 +1,106 @@
+name: Build Android APK
+
+# Builds an installable Android APK of the Speedy client and attaches it to the
+# workflow run. The client is a thin wrapper: it connects to a Speedy server
+# running on your own computer, where the actual downloads happen.
+
+on:
+  push:
+    branches: [master, main]
+    paths:
+      - "client/**"
+      - "assets/**"
+      - ".github/workflows/android.yml"
+  pull_request:
+    paths:
+      - "client/**"
+      - "assets/**"
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Also create a GitHub Release with the APK attached"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    name: Build APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Capacitor
+        working-directory: client/android
+        run: npm install --no-fund --no-audit
+
+      - name: Generate the Android project
+        working-directory: client/android
+        run: npx cap add android
+
+      - name: Apply Speedy configuration and icons
+        working-directory: client/android
+        run: python3 setup_android.py
+
+      - name: Build debug APK
+        working-directory: client/android/android
+        run: |
+          chmod +x ./gradlew
+          ./gradlew --no-daemon assembleDebug
+
+      - name: Name and verify the APK
+        working-directory: client/android
+        run: |
+          SRC=$(find android -name "app-debug.apk" -print -quit)
+          if [ -z "$SRC" ]; then
+            echo "::error::no APK was produced"
+            exit 1
+          fi
+          mkdir -p out
+          cp "$SRC" out/Speedy-1.2.0-debug.apk
+          ls -lh out/
+          # Confirm it is a real APK and that our package is inside it.
+          unzip -l out/Speedy-1.2.0-debug.apk | grep -q "AndroidManifest.xml"
+          unzip -l out/Speedy-1.2.0-debug.apk | grep -q "assets/public/index.html"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: speedy-android-apk
+          path: client/android/out/*.apk
+          if-no-files-found: error
+
+      - name: Create release
+        if: github.event_name == 'workflow_dispatch' && inputs.release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: android-v1.2.0
+          name: Speedy Android v1.2.0
+          body: |
+            Speedy Android client, built by Ayanlowo Olatunji Ayobami.
+
+            Install this APK, then enter the address of the computer running
+            your Speedy server (start it with
+            `python speedy_web.py --host 0.0.0.0 --port 8000`).
+
+            This is a debug-signed build: Android will warn you that the app
+            comes from an unknown source. Allow installation when prompted.
+          files: client/android/out/*.apk

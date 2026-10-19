@@ -18,10 +18,13 @@ import cairosvg
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
 OUT = Path(__file__).parent / "assets"
+DESKTOP = Path(__file__).parent / "client" / "build"
+
+AUTHOR = "Ayanlowo Olatunji Ayobami"
 
 # Palette mirrors the web UI so the icon feels native to the product.
 GRAD = (("#6aa6ff", 0.0), ("#3a78f0", 0.55), ("#2554c4", 1.0))
-BG_DARK = "#14161a"
+BG_DARK = "#0b0d12"
 INK = "#eef1f5"
 MUTED = "#8b93a1"
 
@@ -185,16 +188,28 @@ def make_web() -> list[Path]:
     out.append(ico)
 
     manifest = {
-        "name": "Speedy",
+        "name": "Speedy — Media & File Downloader",
         "short_name": "Speedy",
-        "description": "Fast media downloader",
+        "description": ("Fast downloader for video, audio, documents and any "
+                        "file you have the right to download. Built by "
+                        "Ayanlowo Olatunji Ayobami."),
+        "id": "/",
         "start_url": "/",
+        "scope": "/",
         "display": "standalone",
-        "background_color": "#14161a",
-        "theme_color": "#3a78f0",
+        "display_override": ["standalone", "minimal-ui"],
+        "orientation": "any",
+        "background_color": "#0b0d12",
+        "theme_color": "#0b0d12",
+        "categories": ["utilities", "productivity"],
+        "lang": "en",
+        "dir": "ltr",
+        "author": AUTHOR,
         "icons": [
-            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png"},
-            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png"},
+            {"src": "/icon-192.png", "sizes": "192x192", "type": "image/png",
+             "purpose": "any"},
+            {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png",
+             "purpose": "any"},
             {"src": "/icon-512.png", "sizes": "512x512", "type": "image/png",
              "purpose": "maskable"},
         ],
@@ -202,6 +217,20 @@ def make_web() -> list[Path]:
     p = OUT / "web" / "manifest.webmanifest"
     p.write_text(json.dumps(manifest, indent=2) + "\n")
     out.append(p)
+    return out
+
+
+def make_desktop() -> list[Path]:
+    """Icon used by the Electron desktop build (Windows, macOS, Linux).
+
+    Unrounded and full-bleed: the installers apply their own masking, and a
+    pre-rounded icon looks wrong in the Windows taskbar.
+    """
+    out = []
+    for name, size in (("icon.png", 512), ("icon-256.png", 256)):
+        p = DESKTOP / name
+        save(icon(size, rounded=False), p)
+        out.append(p)
     return out
 
 
@@ -266,6 +295,7 @@ def main() -> int:
     made += [OUT / "icon-1024.png", OUT / "icon-1024-fullbleed.png"]
 
     made += make_ios() + make_android() + make_web() + make_og() + make_logo()
+    made += make_desktop()
 
     for p in made:
         if p.suffix == ".svg":

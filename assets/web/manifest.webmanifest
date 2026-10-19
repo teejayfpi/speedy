@@ -1,21 +1,37 @@
 {
-  "name": "Speedy",
+  "name": "Speedy \u2014 Media & File Downloader",
   "short_name": "Speedy",
-  "description": "Fast media downloader",
+  "description": "Fast downloader for video, audio, documents and any file you have the right to download. Built by Ayanlowo Olatunji Ayobami.",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#14161a",
-  "theme_color": "#3a78f0",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#0b0d12",
+  "theme_color": "#0b0d12",
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "author": "Ayanlowo Olatunji Ayobami",
   "icons": [
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
     },
     {
       "src": "/icon-512.png",

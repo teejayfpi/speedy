@@ -3,3 +3,13 @@ __pycache__/
 downloads/
 .part
 *.part
+
+# Native client build artefacts
+node_modules/
+client/android/android/
+client/dist/
+dist/
+*.apk
+*.aab
+*.AppImage
+*.deb
